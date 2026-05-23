@@ -1,98 +1,108 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { getMenu } from '@/services/menuService'
+import { FoodCard } from '@/components/FoodCard'
+import { CategoryChips } from '@/components/CategoryChips'
+import { FloatingCart } from '@/components/FloatingCart'
+import { CheckoutModal } from '@/components/CheckoutModal'
+import { OrderSuccess } from '@/components/OrderSuccess'
+import { useParams } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { useCart } from '@/context/CartContext'
+import { sessionService } from '@/services/sessionService'
 
-interface Props {
-  params: Promise<{
-    restaurantId: string
-    tableId: string
-  }>
-}
+export default function RestaurantPage() {
+  const params = useParams()
+  const restaurantId = params.restaurantId as string
+  const tableId = params.tableId as string
+  
+  const { setActiveSession, activeSession } = useCart()
+  
+  const [menu, setMenu] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [orderId, setOrderId] = useState<string | null>(null)
 
-export default async function RestaurantPage({
-  params,
-}: Props) {
-  const {
-    restaurantId,
-    tableId,
-  } = await params
+  useEffect(() => {
+    async function fetchData() {
+      const data = await getMenu(restaurantId)
+      setMenu(data)
+      
+      const session = await sessionService.getActiveSession(restaurantId, tableId)
+      if (session) {
+        setActiveSession(session)
+      }
+      
+      setLoading(false)
+    }
+    fetchData()
+  }, [restaurantId, tableId, setActiveSession])
 
-  const menu = await getMenu(
-    restaurantId
-  )
+  const categories = ['All', ...Array.from(new Set(menu.map(item => item.category || 'General')))]
+  const filteredMenu = selectedCategory === 'All' ? menu : menu.filter(item => (item.category || 'General') === selectedCategory)
+  const recommendedItems = menu.filter(item => item.isRecommended).slice(0, 3)
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5] py-8 px-4">
-      <div className="max-w-5xl mx-auto">
-
-        {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-400 rounded-3xl p-8 text-white shadow-xl mb-8">
-          <h1 className="text-5xl font-bold mb-2">
-            TableTap
-          </h1>
-
-          <p className="text-lg opacity-90">
-            Premium QR Dining Experience
-          </p>
-
-          <div className="mt-6 flex gap-4">
-            <div className="bg-white/20 px-4 py-2 rounded-xl">
-              Restaurant: {restaurantId}
-            </div>
-
-            <div className="bg-white/20 px-4 py-2 rounded-xl">
-              Table: {tableId}
+    <main className="min-h-screen bg-background pb-24">
+      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 border-b border-border">
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold">LOGO</div>
+            <div>
+                <h1 className="text-2xl font-bold text-foreground">Restaurant Name</h1>
+                <p className="text-foreground/70">Table {tableId}</p>
             </div>
           </div>
-        </div>
-
-        {/* Menu */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {menu.map((item: any) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-3xl shadow-lg overflow-hidden hover:scale-[1.02] transition-all duration-300"
-            >
-              <div className="h-56 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                <span className="text-6xl">
-                  🍽️
-                </span>
-              </div>
-
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800">
-                      {item.name}
-                    </h2>
-
-                    <p className="text-gray-500 mt-1">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <div
-                    className={`w-4 h-4 rounded-full ${
-                      item.isVeg
-                        ? 'bg-green-500'
-                        : 'bg-red-500'
-                    }`}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between mt-6">
-                  <p className="text-3xl font-bold text-orange-500">
-                    ₹{item.price}
-                  </p>
-
-                  <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-semibold transition-all">
-                    Add
-                  </button>
-                </div>
-              </div>
+          {activeSession && (
+            <div className="mt-4 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium inline-block">
+              Existing session found: {activeSession.orders.length} orders
             </div>
-          ))}
+          )}
         </div>
-
       </div>
+
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        {recommendedItems.length > 0 && (
+            <>
+                <h2 className="text-xl font-bold text-foreground mb-4">Recommended for you</h2>
+                <div className="grid gap-4 mb-8">
+                    {recommendedItems.map((item: any) => (
+                        <FoodCard key={item.id} item={item} />
+                    ))}
+                </div>
+            </>
+        )}
+        
+        <CategoryChips categories={categories} selected={selectedCategory} onSelect={setSelectedCategory} />
+        
+        <motion.div 
+          layout
+          className="grid gap-4 mt-6"
+        >
+          {filteredMenu.map((item: any) => (
+            <FoodCard key={item.id} item={item} />
+          ))}
+        </motion.div>
+      </div>
+
+      <FloatingCart onCheckout={() => setIsCheckoutOpen(true)} />
+      
+      <CheckoutModal 
+        isOpen={isCheckoutOpen} 
+        onClose={() => setIsCheckoutOpen(false)} 
+        onSuccess={(id) => setOrderId(id)}
+      />
+      
+      {orderId && (
+        <OrderSuccess 
+          orderId={orderId} 
+          onClose={() => setOrderId(null)} 
+        />
+      )}
     </main>
   )
 }
