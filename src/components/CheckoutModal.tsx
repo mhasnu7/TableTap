@@ -8,14 +8,16 @@ import { useParams } from 'next/navigation'
 import { useToast } from '@/context/ToastContext'
 import { sessionService } from '@/services/sessionService'
 import { formatCurrency } from '@/lib/formatters'
+import { Restaurant } from '@/types/restaurant'
 
 interface CheckoutModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: (orderId: string) => void
+  restaurant: Restaurant | null
 }
 
-export function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps) {
+export function CheckoutModal({ isOpen, onClose, onSuccess, restaurant }: CheckoutModalProps) {
   const { items, totalAmount, clearCart } = useCart()
   const { showToast } = useToast()
   const params = useParams()
@@ -23,8 +25,14 @@ export function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps
   const tableId = params.tableId as string
 
   const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
   const [instructions, setInstructions] = useState('')
-  const [paymentMode, setPaymentMode] = useState<'prepaid' | 'pay_later'>('prepaid')
+  
+  const paymentSettings = restaurant?.paymentSettings || { paymentMode: 'both', upiId: '', paymentQr: '' }
+  const [paymentChoice, setPaymentChoice] = useState<'prepaid' | 'pay_later'>(
+    paymentSettings.paymentMode === 'prepaid' ? 'prepaid' : 'pay_later'
+  )
+  const [showPaymentScreen, setShowPaymentScreen] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handlePlaceOrder = async () => {
@@ -33,32 +41,49 @@ export function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps
       return
     }
 
+    if (paymentChoice === 'prepaid') {
+        setShowPaymentScreen(true)
+        return
+    }
+
+    await finalizeOrder()
+  }
+
+  const finalizeOrder = async (paymentStatus?: 'pending_verification' | 'paid' | 'unpaid') => {
     setLoading(true)
 
-    const formattedItems = items.map(item => ({
-      menuItemId: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity
-    }))
-
     try {
-      if (paymentMode === 'pay_later') {
+      if (paymentChoice === 'pay_later') {
+        const sessionItems = items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            subtotal: item.price * item.quantity
+        }))
         const activeSession = await sessionService.getActiveSession(restaurantId, tableId)
         
         if (activeSession) {
-          await sessionService.appendOrderToSession(activeSession.id, restaurantId, { items: formattedItems, total: totalAmount })
+          await sessionService.appendOrderToSession(activeSession.id, restaurantId, { items: sessionItems, total: totalAmount })
         } else {
-          await sessionService.createSession(restaurantId, tableId, { items: formattedItems, total: totalAmount })
+          await sessionService.createSession(restaurantId, tableId, { items: sessionItems, total: totalAmount })
         }
       } else {
+        const orderItems = items.map(item => ({
+            menuItemId: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+        }))
         await createOrder({
           restaurantId,
           tableId,
           customerName,
-          items: formattedItems,
+          customerPhone: customerPhone || undefined,
+          items: orderItems,
           totalAmount: totalAmount,
-          paymentMode,
+          paymentMode: paymentChoice,
+          paymentStatus: paymentStatus || 'unpaid',
           specialInstructions: instructions,
         })
       }
@@ -73,6 +98,8 @@ export function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps
       setLoading(false)
     }
   }
+
+  const upiLink = `upi://pay?pa=${paymentSettings.upiId}&pn=${restaurant?.name || 'Restaurant'}&am=${totalAmount}`
 
   const handleCancelOrder = () => {
     clearCart()
@@ -103,67 +130,109 @@ export function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps
           >
             <h2 className="text-2xl font-bold mb-4">Checkout</h2>
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Customer Name</label>
-                <input 
-                  type="text" 
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-                  placeholder="Enter your name"
-                />
-              </div>
+            {!showPaymentScreen ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Customer Name</label>
+                  <input 
+                    type="text" 
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter your name"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Special Instructions</label>
-                <textarea 
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-                  placeholder="e.g. No onions"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone Number (Optional)</label>
+                  <input 
+                    type="tel" 
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter phone number"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Enter phone number to receive order updates.</p>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Payment Mode</label>
-                <div className="flex gap-4 mt-1">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Special Instructions</label>
+                  <textarea 
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                    placeholder="e.g. No onions"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Payment Mode</label>
+                  <div className="flex gap-4 mt-1">
+                    {['prepaid', 'both'].includes(paymentSettings.paymentMode) && (
+                      <button 
+                        onClick={() => setPaymentChoice('prepaid')}
+                        className={`flex-1 py-2 rounded-md ${paymentChoice === 'prepaid' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+                      >Pay Now</button>
+                    )}
+                    {['postpaid', 'both'].includes(paymentSettings.paymentMode) && (
+                      <button 
+                        onClick={() => setPaymentChoice('pay_later')}
+                        className={`flex-1 py-2 rounded-md ${paymentChoice === 'pay_later' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+                      >Pay at Counter</button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
                   <button 
-                    onClick={() => setPaymentMode('prepaid')}
-                    className={`flex-1 py-2 rounded-md ${paymentMode === 'prepaid' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
-                  >Prepaid</button>
-                  <button 
-                    onClick={() => setPaymentMode('pay_later')}
-                    className={`flex-1 py-2 rounded-md ${paymentMode === 'pay_later' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
-                  >Pay Later</button>
+                    onClick={handlePlaceOrder}
+                    disabled={loading}
+                    className="w-full py-3 bg-green-600 text-white rounded-xl font-bold disabled:opacity-50"
+                  >
+                    {loading ? 'Processing...' : `Continue - ${formatCurrency(totalAmount)}`}
+                  </button>
+                  
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleClearCart}
+                      className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-xl font-semibold"
+                    >
+                      Clear Cart
+                    </button>
+                    <button 
+                      onClick={handleCancelOrder}
+                      className="flex-1 py-2 bg-red-100 text-red-700 rounded-xl font-semibold"
+                    >
+                      Cancel Order
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex flex-col gap-2">
-                <button 
-                  onClick={handlePlaceOrder}
-                  disabled={loading}
-                  className="w-full py-3 bg-green-600 text-white rounded-xl font-bold disabled:opacity-50"
-                >
-                  {loading ? 'Placing Order...' : `Place Order - ${formatCurrency(totalAmount)}`}
-                </button>
+            ) : (
+              <div className="space-y-4 text-center">
+                <h3 className="text-xl font-bold">Complete Payment</h3>
+                <p className="text-gray-600">Scan QR or pay via UPI</p>
+                <div className="bg-gray-100 p-4 rounded-xl">
+                    {/* Placeholder for QR code */}
+                    <p>QR Code</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+                    <span className="font-mono text-sm">{paymentSettings.upiId}</span>
+                    <button className="text-blue-600 text-sm font-semibold">Copy</button>
+                </div>
+                <p className="font-bold text-lg">Total: {formatCurrency(totalAmount)}</p>
                 
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleClearCart}
-                    className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-xl font-semibold"
-                  >
-                    Clear Cart
-                  </button>
-                  <button 
-                    onClick={handleCancelOrder}
-                    className="flex-1 py-2 bg-red-100 text-red-700 rounded-xl font-semibold"
-                  >
-                    Cancel Order
-                  </button>
-                </div>
+                <a href={upiLink} className="block w-full py-3 bg-blue-600 text-white rounded-xl font-bold">Pay Now</a>
+                
+                <button 
+                    onClick={() => finalizeOrder('pending_verification')}
+                    disabled={loading}
+                    className="w-full py-3 bg-green-600 text-white rounded-xl font-bold disabled:opacity-50"
+                >
+                    {loading ? 'Verifying...' : 'I Have Paid'}
+                </button>
               </div>
-            </div>
+            )}
           </motion.div>
         </div>
       )}

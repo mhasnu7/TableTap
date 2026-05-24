@@ -3,20 +3,24 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User as CustomUser } from '@/types/user'
 import { db } from '@/lib/firebase'
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 
 interface AuthContextType {
   user: CustomUser | null
   loading: boolean
   login: (phone: string, pin: string) => Promise<boolean>
+  signup: (name: string, email: string, phone: string, pin: string) => Promise<boolean>
   logout: () => void
+  setUser: (user: CustomUser | null) => void
 }
 
 const AuthContext = createContext<AuthContextType>({ 
   user: null, 
   loading: true, 
   login: async () => false, 
-  logout: () => {} 
+  signup: async () => false,
+  logout: () => {},
+  setUser: () => {}
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -31,6 +35,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false)
   }, [])
 
+  const signup = async (name: string, email: string, phone: string, pin: string): Promise<boolean> => {
+    try {
+      const usersRef = collection(db, 'users')
+      // Check if user exists
+      const q = query(usersRef, where('phone', '==', phone))
+      const querySnapshot = await getDocs(q)
+      
+      if (!querySnapshot.empty) return false // User exists
+
+      // Using crypto.randomUUID() for a realistic uid
+      const uid = crypto.randomUUID()
+      const newUser: Omit<CustomUser, 'id'> = {
+        name,
+        email,
+        phone,
+        pin,
+        role: 'owner', // Requirement: role "owner"
+        restaurantId: '', // To be updated in onboarding
+        active: true,
+        createdAt: new Date(),
+      }
+      
+      const userRef = doc(db, 'users', uid)
+      await setDoc(userRef, { ...newUser, id: uid })
+      
+      return true
+    } catch (e) {
+      console.error(e)
+      return false
+    }
+  }
+
   const login = async (phone: string, pin: string): Promise<boolean> => {
     const usersRef = collection(db, 'users')
     const q = query(usersRef, where('phone', '==', phone), where('pin', '==', pin))
@@ -39,10 +75,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!querySnapshot.empty) {
       const userDoc = querySnapshot.docs[0]
       const userData = { id: userDoc.id, ...userDoc.data() } as CustomUser
-      setUser(userData)
-      localStorage.setItem('tabletap_user', JSON.stringify(userData))
+      
+      if (!userData.active) return false;
+
+      // Update lastLogin
+      await updateDoc(userDoc.ref, { lastLogin: serverTimestamp() });
+      const updatedUserData = { ...userData, lastLogin: new Date() };
+
+      setUser(updatedUserData)
+      localStorage.setItem('tabletap_user', JSON.stringify(updatedUserData))
       // Set cookie for middleware (expires in 1 day)
-      document.cookie = `__session_role=${userData.role}; path=/; max-age=86400; SameSite=Strict`
+      document.cookie = `__session_role=${updatedUserData.role}; path=/; max-age=86400; SameSite=Strict`
+      document.cookie = `__session_restaurantId=${updatedUserData.restaurantId || ''}; path=/; max-age=86400; SameSite=Strict`
       return true
     }
     return false
@@ -56,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   )

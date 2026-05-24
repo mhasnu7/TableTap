@@ -26,8 +26,18 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedItems = localStorage.getItem('cartItems')
+      return savedItems ? JSON.parse(savedItems) : []
+    }
+    return []
+  })
   const [activeSession, setActiveSession] = useState<Session | null>(null)
+
+  useEffect(() => {
+    localStorage.setItem('cartItems', JSON.stringify(items))
+  }, [items])
 
   const addItem = (item: any) => {
     setItems((prev) => {

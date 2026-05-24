@@ -2,13 +2,16 @@
 
 import { motion } from 'framer-motion'
 import { CheckCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface OrderSuccessProps {
   orderId: string
+  restaurantId: string
   onClose: () => void
 }
 
-export function OrderSuccess({ orderId, onClose }: OrderSuccessProps) {
+export function OrderSuccess({ orderId, restaurantId, onClose }: OrderSuccessProps) {
+  const router = useRouter()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white">
       <motion.div 
@@ -21,12 +24,14 @@ export function OrderSuccess({ orderId, onClose }: OrderSuccessProps) {
         <p className="text-gray-600 mt-2">Order ID: {orderId}</p>
         <p className="text-gray-600 mt-1">Estimated preparation: 15-20 mins</p>
         
-        <button 
-          onClick={onClose}
-          className="mt-8 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold"
-        >
-          Continue Ordering
-        </button>
+        <div className="flex flex-col gap-3 mt-8">
+          <button 
+            onClick={onClose}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold"
+          >
+            Continue Ordering
+          </button>
+        </div>
       </motion.div>
     </div>
   )

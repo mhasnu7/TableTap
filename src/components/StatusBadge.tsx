@@ -4,9 +4,12 @@ import { motion } from 'framer-motion'
 export default function StatusBadge({ status }: { status: string }) {
   const colors = {
     pending: 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50',
-    preparing: 'bg-blue-500/20 text-blue-500 border border-blue-500/50',
+    accepted: 'bg-blue-500/20 text-blue-500 border border-blue-500/50',
+    preparing: 'bg-purple-500/20 text-purple-500 border border-purple-500/50',
+    ready: 'bg-orange-500/20 text-orange-500 border border-orange-500/50',
     served: 'bg-green-500/20 text-green-500 border border-green-500/50',
     completed: 'bg-gray-500/20 text-gray-500 border border-gray-500/50',
+    cancelled: 'bg-red-500/20 text-red-500 border border-red-500/50',
   }
   
   const style = colors[status as keyof typeof colors] || 'bg-gray-500/20 text-gray-500 border border-gray-500/50'

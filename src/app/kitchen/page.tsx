@@ -15,7 +15,7 @@ export default function KitchenDashboard() {
     
     const unsubscribe = subscribeToOrders(user.restaurantId, (allOrders) => {
       console.log('DEBUG: Received snapshot updates for kitchen orders')
-      const filteredOrders = allOrders.filter(o => ['pending', 'accepted', 'preparing'].includes(o.status))
+      const filteredOrders = allOrders.filter(o => ['pending', 'accepted', 'preparing', 'ready', 'completed'].includes(o.status))
       setOrders(filteredOrders)
     })
 

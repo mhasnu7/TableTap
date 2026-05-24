@@ -5,7 +5,7 @@ import { LayoutDashboard, Users, UtensilsCrossed, LogOut, Menu } from 'lucide-re
 import { useState } from 'react'
 import { clsx } from 'clsx'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children, navItems, title }: { children: React.ReactNode, navItems: React.ReactNode, title: string }) {
   const { logout, user, loading } = useAuth()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
@@ -25,21 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
         <nav className="mt-6 flex-1 px-4 space-y-2">
-          {user?.role === 'admin' && (
-            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg">
-              <LayoutDashboard size={20} /> Admin Overview
-            </Link>
-          )}
-          {user?.role === 'waiter' && (
-            <Link href="/staff" className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg">
-              <Users size={20} /> Staff Overview
-            </Link>
-          )}
-          {user?.role === 'kitchen' && (
-            <Link href="/kitchen" className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-lg">
-              <UtensilsCrossed size={20} /> Kitchen View
-            </Link>
-          )}
+          {navItems}
         </nav>
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
           <button onClick={logout} className="flex items-center gap-3 text-red-600 dark:text-red-400 font-semibold hover:text-red-800">
@@ -57,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-500 dark:text-gray-400 mr-4">
             <Menu />
           </button>
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white capitalize">{user?.role || 'Dashboard'}</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white capitalize">{title}</h2>
         </header>
         <div className="p-8">
           {children}

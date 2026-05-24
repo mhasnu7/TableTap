@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { collection, query, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/context/AuthContext'
@@ -21,7 +22,10 @@ export default function DashboardPage() {
   const restaurantId = user?.restaurantId
 
   useEffect(() => {
-    if (!restaurantId) return
+    if (!restaurantId) {
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     // Firestore query path strictly restaurants/{restaurantId}/orders
@@ -142,6 +146,17 @@ export default function DashboardPage() {
             <OrderSkeleton />
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (!restaurantId) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center">
+        <div className="text-gray-500 mb-4 font-semibold text-lg">No restaurant setup found.</div>
+        <Link href="/setup" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+          Complete Restaurant Setup
+        </Link>
       </div>
     )
   }
@@ -369,7 +384,7 @@ function AdminOrderCard({
           <div className="text-right">
             <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-wider">Order Total</p>
             <p className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono mt-0.5">
-              ₹{(order.totalAmount || order.total || 0).toFixed(2)}
+              ₹{(order.totalAmount || 0).toFixed(2)}
             </p>
           </div>
         </div>

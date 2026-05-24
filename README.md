@@ -18,6 +18,21 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Local Network Access & QR Codes
+
+For local development and testing on mobile devices:
+
+1.  Run the development server, which is now configured to bind to all network interfaces:
+    ```bash
+    npm run dev
+    ```
+
+2.  Find your computer's local IP address (e.g., `192.168.x.x`).
+
+3.  Access the application from your phone using `http://<your-ip>:3000`.
+
+4.  In the Admin Dashboard -> QR Management, the QR codes will automatically detect the base URL. If they are incorrect, you can manually set the Base URL in the settings section on that page.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

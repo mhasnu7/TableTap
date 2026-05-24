@@ -17,7 +17,7 @@ export default function BillingPanel({ session, onClose, restaurantId, tableId }
     </div>
   )
 
-  const handleUpdateStatus = async (status: 'billing' | 'available') => {
+  const handleUpdateStatus = async (status: 'billing' | 'available' | 'cleaning') => {
     await tableService.updateTable(restaurantId, tableId, { status })
   }
 
@@ -66,14 +66,21 @@ export default function BillingPanel({ session, onClose, restaurantId, tableId }
           className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-950/20"
         >
           <CreditCard size={16} />
-          Mark as Billing
+          Bill Requested
+        </button>
+        <button 
+          onClick={() => handleUpdateStatus('cleaning')}
+          className="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-950/20"
+        >
+          <X size={16} />
+          Request Cleanup
         </button>
         <button 
           onClick={() => handleUpdateStatus('available')}
           className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20"
         >
           <CheckCircle size={16} />
-          Mark as Available
+          Close & Clean Table
         </button>
       </div>
     </div>
