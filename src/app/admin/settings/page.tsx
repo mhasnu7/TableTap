@@ -26,16 +26,16 @@ export default function RestaurantSettingsPage() {
         }
 
         // Add default payment settings if missing
-        const restaurantData = {
-          ...data,
-          paymentSettings: data.paymentSettings || {
-            allowPrepaid: true,
-            allowPayAtCounter: true,
-            upiId: "",
-            paymentQr: "",
-            paymentMode: "both"
-          }
-        }
+        const restaurantData: Restaurant = {
+  ...(data as Restaurant),
+  paymentSettings: data?.paymentSettings || {
+    allowPrepaid: true,
+    allowPayAtCounter: true,
+    upiId: "",
+    paymentQr: "",
+    paymentMode: "both"
+  }
+}
         
         setRestaurant(restaurantData as Restaurant)
         setLoading(false)
