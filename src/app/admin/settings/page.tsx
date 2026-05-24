@@ -20,6 +20,11 @@ export default function RestaurantSettingsPage() {
       if (user?.restaurantId) {
         const data = await restaurantService.getRestaurant(user.restaurantId)
         
+        if (!data) {
+          setLoading(false)
+          return
+        }
+
         // Add default payment settings if missing
         const restaurantData = {
           ...data,

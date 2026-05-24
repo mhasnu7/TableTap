@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 export default function OrderCard({ 
   order, 
   restaurantId,
+  onUpdateStatus,
 }: { 
   order: Order, 
-  restaurantId: string
+  restaurantId: string,
+  onUpdateStatus?: (orderId: string, status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled') => Promise<void>
 }) {
   const [elapsed, setElapsed] = useState(0)
 
@@ -20,8 +22,12 @@ export default function OrderCard({
     return () => clearInterval(interval)
   }, [order.createdAt])
 
-  const handleUpdateStatus = async (newStatus: string) => {
-    await updateOrderStatus(restaurantId, order.id, newStatus)
+  const handleUpdateStatus = async (newStatus: 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled') => {
+    if (onUpdateStatus) {
+      await onUpdateStatus(order.id, newStatus)
+    } else {
+      await updateOrderStatus(restaurantId, order.id, newStatus)
+    }
   }
 
   return (

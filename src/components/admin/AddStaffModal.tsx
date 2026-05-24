@@ -5,7 +5,7 @@ import { UserRole } from '../../types/user';
 import { useToast } from '../../context/ToastContext';
 
 export default function AddStaffModal({ isOpen, onClose, restaurantId }: { isOpen: boolean; onClose: () => void; restaurantId: string }) {
-  const [formData, setFormData] = useState({ name: '', phone: '', pin: '', role: 'waiter' as UserRole, active: true });
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', pin: '', role: 'waiter' as UserRole, active: true });
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
@@ -25,7 +25,8 @@ export default function AddStaffModal({ isOpen, onClose, restaurantId }: { isOpe
     try {
       await addStaff(restaurantId, { 
         name: formData.name, 
-        phone: formData.phone, 
+        phone: formData.phone,
+        email: formData.email,
         pin: formData.pin, 
         role: formData.role, 
         active: formData.active 
@@ -47,6 +48,7 @@ export default function AddStaffModal({ isOpen, onClose, restaurantId }: { isOpe
         <form onSubmit={handleSubmit} className="space-y-4">
           <input type="text" placeholder="Name" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, name: e.target.value})} required />
           <input type="tel" placeholder="Phone Number" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, phone: e.target.value})} required />
+          <input type="email" placeholder="Email" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, email: e.target.value})} required />
           <input type="password" placeholder="PIN" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, pin: e.target.value})} required />
           <select className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, role: e.target.value as UserRole})}>
             <option value="waiter">Waiter</option>
