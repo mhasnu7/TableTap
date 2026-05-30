@@ -31,7 +31,7 @@ export default function KanbanBoard({ sessions, restaurantId }: { sessions: Sess
     }))
   )
 
-  const columns: OrderStatus[] = ['pending', 'accepted', 'preparing', 'ready']
+  const columns: OrderStatus[] = ['PENDING', 'ACCEPTED', 'PREPARING', 'READY']
 
   return (
     <div className="flex gap-4 p-4 min-h-screen bg-gray-950 overflow-x-auto">
@@ -44,7 +44,7 @@ export default function KanbanBoard({ sessions, restaurantId }: { sessions: Sess
                 key={order.id} 
                 order={order} 
                 restaurantId={restaurantId}
-                onUpdateStatus={async (orderId: string, status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled') => {
+                onUpdateStatus={async (orderId: string, status: OrderStatus) => {
                   const session = sessions.find(s => s.orders.some(o => o.orderId === orderId))
                   if (session) {
                     await handleUpdateStatus(orderId, status as OrderStatus, session.id)

@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'completed' | 'all'>('active')
+  const [activeTab, setActiveTab] = useState<'active' | 'PENDING' | 'completed' | 'all'>('active')
   
   const { user } = useAuth()
   const { showToast } = useToast()
@@ -96,7 +96,7 @@ export default function DashboardPage() {
   const totalActiveOrdersCount = activeOrders.length
   
   const pendingOrdersCount = orders.filter(
-    (o) => o.status === 'pending'
+    (o) => o.status === 'PENDING'
   ).length
 
   // Occupied tables: count of unique table IDs containing at least one active order
@@ -122,7 +122,7 @@ export default function DashboardPage() {
   const filteredOrders = orders.filter((o) => {
     if (activeTab === 'all') return true
     if (activeTab === 'completed') return o.status === 'completed'
-    if (activeTab === 'pending') return o.status === 'pending'
+    if (activeTab === 'PENDING') return o.status === 'PENDING'
     // 'active' tab: all statuses except completed and cancelled
     return o.status && o.status !== 'completed' && o.status !== 'cancelled'
   })
@@ -207,7 +207,7 @@ export default function DashboardPage() {
           
           {/* Tab Filters */}
           <div className="flex flex-wrap bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-            {(['active', 'pending', 'completed', 'all'] as const).map((tab) => (
+            {(['active', 'PENDING', 'completed', 'all'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -305,15 +305,15 @@ function AdminOrderCard({
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/50'
-      case 'accepted':
+      case 'ACCEPTED':
         return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50'
-      case 'preparing':
+      case 'PREPARING':
         return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800/50'
-      case 'ready':
+      case 'READY':
         return 'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800/50'
-      case 'served':
+      case 'SERVED':
         return 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800/50'
       case 'completed':
         return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/50'
@@ -391,31 +391,31 @@ function AdminOrderCard({
 
         {/* Status controls: pending → accepted → preparing → ready → completed */}
         <div className="flex gap-2">
-          {order.status === 'pending' && (
+          {order.status === 'PENDING' && (
             <button
-              onClick={() => onUpdateStatus(order.id, 'accepted')}
+              onClick={() => onUpdateStatus(order.id, 'ACCEPTED')}
               className="flex-1 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-colors shadow-lg shadow-indigo-600/10"
             >
               Accept
             </button>
           )}
-          {order.status === 'accepted' && (
+          {order.status === 'ACCEPTED' && (
             <button
-              onClick={() => onUpdateStatus(order.id, 'preparing')}
+              onClick={() => onUpdateStatus(order.id, 'PREPARING')}
               className="flex-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-colors shadow-lg shadow-amber-600/10"
             >
               Prepare
             </button>
           )}
-          {order.status === 'preparing' && (
+          {order.status === 'PREPARING' && (
             <button
-              onClick={() => onUpdateStatus(order.id, 'ready')}
+              onClick={() => onUpdateStatus(order.id, 'READY')}
               className="flex-1 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-colors shadow-lg shadow-purple-600/10"
             >
               Ready
             </button>
           )}
-          {order.status === 'ready' && (
+          {order.status === 'READY' && (
             <button
               onClick={() => onUpdateStatus(order.id, 'completed')}
               className="flex-1 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-colors shadow-lg shadow-emerald-600/10"

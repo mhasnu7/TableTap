@@ -1,5 +1,6 @@
 import { Order, updateOrderStatus } from '@/services/orderService'
 import { useState, useEffect } from 'react'
+import { OrderStatus } from '@/types/session'
 
 export default function OrderCard({ 
   order, 
@@ -8,7 +9,7 @@ export default function OrderCard({
 }: { 
   order: Order, 
   restaurantId: string,
-  onUpdateStatus?: (orderId: string, status: string) => Promise<void>
+  onUpdateStatus?: (orderId: string, status: OrderStatus) => Promise<void>
 }) {
   const [elapsed, setElapsed] = useState(0)
 
@@ -22,7 +23,7 @@ export default function OrderCard({
     return () => clearInterval(interval)
   }, [order.createdAt])
 
-  const handleUpdateStatus = async (newStatus: string) => {
+  const handleUpdateStatus = async (newStatus: OrderStatus) => {
     if (onUpdateStatus) {
       await onUpdateStatus(order.id, newStatus)
     } else {

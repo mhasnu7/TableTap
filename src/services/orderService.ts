@@ -1,4 +1,5 @@
 import { db } from '../lib/firebase';
+import { OrderStatus } from '../types/session';
 import {
   collection,
   addDoc,
@@ -43,7 +44,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
       ...orderData,
       customerPhone: orderData.customerPhone ?? "",
       specialInstructions: orderData.specialInstructions ?? "",
-      status: orderData.status ?? 'pending',
+      status: orderData.status ?? 'PENDING',
       paymentStatus: orderData.paymentStatus ?? 'unpaid',
       createdAt: serverTimestamp(),
     });
@@ -75,7 +76,7 @@ export const subscribeToOrders = (restaurantId: string, callback: (orders: any[]
   });
 };
 
-export const updateOrderStatus = async (restaurantId: string, orderId: string, newStatus: string) => {
+export const updateOrderStatus = async (restaurantId: string, orderId: string, newStatus: OrderStatus) => {
   try {
     const orderRef = doc(db, 'restaurants', restaurantId, 'orders', orderId);
     await updateDoc(orderRef, { status: newStatus });
