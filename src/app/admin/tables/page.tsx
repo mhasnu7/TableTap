@@ -27,7 +27,7 @@ export default function TablesPage() {
   const handleAddTable = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!restaurantId) return
-    await tableService.addTable(restaurantId, { name, capacity, active: true, status: 'available' })
+    await tableService.addTable(restaurantId, { name, capacity, active: true, status: 'AVAILABLE' })
     setName('')
   }
 

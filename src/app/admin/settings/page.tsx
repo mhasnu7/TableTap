@@ -25,17 +25,23 @@ export default function RestaurantSettingsPage() {
           return
         }
 
-        // Add default payment settings if missing
         const restaurantData: Restaurant = {
-  ...(data as Restaurant),
-  paymentSettings: data?.paymentSettings || {
-    allowPrepaid: true,
-    allowPayAtCounter: true,
-    upiId: "",
-    paymentQr: "",
-    paymentMode: "both"
-  }
-}
+          ...(data as Restaurant),
+          paymentSettings: (data as any)?.paymentSettings || {
+            allowPrepaid: true,
+            allowPostpaid: true,
+            defaultPaymentMode: 'prepaid',
+            upiId: "",
+            paymentQr: "",
+            paymentMode: "both"
+          }
+        }
+        
+        // Migrate old structure if needed
+        if (data?.paymentSettings && !(data.paymentSettings as any).allowPostpaid) {
+          (restaurantData.paymentSettings as any).allowPostpaid = (data.paymentSettings as any).allowPayAtCounter || false
+          restaurantData.paymentSettings.defaultPaymentMode = 'prepaid'
+        }
         
         setRestaurant(restaurantData as Restaurant)
         setLoading(false)
@@ -98,6 +104,35 @@ export default function RestaurantSettingsPage() {
         <div className="border-t pt-6 mt-6">
           <h3 className="text-lg font-semibold mb-4">Payment Settings</h3>
           <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={restaurant?.paymentSettings?.allowPrepaid || false}
+                onChange={(e) => setRestaurant(prev => prev ? {...prev, paymentSettings: {...prev.paymentSettings, allowPrepaid: e.target.checked}} : null)}
+                className="w-4 h-4"
+              />
+              <label className="text-sm font-medium">Enable Prepaid</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={restaurant?.paymentSettings?.allowPostpaid || false}
+                onChange={(e) => setRestaurant(prev => prev ? {...prev, paymentSettings: {...prev.paymentSettings, allowPostpaid: e.target.checked}} : null)}
+                className="w-4 h-4"
+              />
+              <label className="text-sm font-medium">Enable Postpaid</label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Default Payment Mode</label>
+              <select
+                value={restaurant?.paymentSettings?.defaultPaymentMode || 'prepaid'}
+                onChange={(e) => setRestaurant(prev => prev ? {...prev, paymentSettings: {...prev.paymentSettings, defaultPaymentMode: e.target.value as 'prepaid' | 'postpaid'}} : null)}
+                className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="prepaid">Prepaid</option>
+                <option value="postpaid">Postpaid</option>
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium mb-1">UPI ID</label>
               <input
@@ -115,18 +150,6 @@ export default function RestaurantSettingsPage() {
                 onUpload={(url) => setRestaurant(prev => prev ? {...prev, paymentSettings: {...prev.paymentSettings, paymentQr: url}} : null)}
                 folder="qrs"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Payment Mode</label>
-              <select
-                value={restaurant?.paymentSettings?.paymentMode || 'prepaid'}
-                onChange={(e) => setRestaurant(prev => prev ? {...prev, paymentSettings: {...prev.paymentSettings, paymentMode: e.target.value as 'prepaid' | 'postpaid' | 'both'}} : null)}
-                className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="prepaid">Prepaid Only</option>
-                <option value="postpaid">Postpaid Only</option>
-                <option value="both">Both</option>
-              </select>
             </div>
           </div>
         </div>

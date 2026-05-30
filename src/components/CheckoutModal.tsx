@@ -15,9 +15,10 @@ interface CheckoutModalProps {
   onClose: () => void
   onSuccess: (orderId: string) => void
   restaurant: Restaurant | null
+  activeSession: any
 }
 
-export function CheckoutModal({ isOpen, onClose, onSuccess, restaurant }: CheckoutModalProps) {
+export function CheckoutModal({ isOpen, onClose, onSuccess, restaurant, activeSession }: CheckoutModalProps) {
   const { items, totalAmount, clearCart } = useCart()
   const { showToast } = useToast()
   const params = useParams()
@@ -29,16 +30,22 @@ export function CheckoutModal({ isOpen, onClose, onSuccess, restaurant }: Checko
   const [instructions, setInstructions] = useState('')
   
   const paymentSettings = restaurant?.paymentSettings || { paymentMode: 'both', upiId: '', paymentQr: '' }
-  const [paymentChoice, setPaymentChoice] = useState<'prepaid' | 'pay_later'>(
-    paymentSettings.paymentMode === 'prepaid' ? 'prepaid' : 'pay_later'
-  )
+  const initialPaymentChoice = paymentSettings.paymentMode === 'postpaid' ? 'counter' : 'prepaid';
+  const [paymentChoice, setPaymentChoice] = useState<'prepaid' | 'counter' | 'table'>(initialPaymentChoice)
   const [showPaymentScreen, setShowPaymentScreen] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handlePlaceOrder = async () => {
+    console.log('Placing order with mode:', paymentChoice);
     if (!customerName.trim()) {
       showToast('Please enter your name')
       return
+    }
+
+    // Skip payment screen for postpaid modes
+    if (paymentChoice !== 'prepaid') {
+        await finalizeOrder('unpaid')
+        return
     }
 
     if (paymentChoice === 'prepaid') {
@@ -50,43 +57,45 @@ export function CheckoutModal({ isOpen, onClose, onSuccess, restaurant }: Checko
   }
 
   const finalizeOrder = async (paymentStatus?: 'pending_verification' | 'paid' | 'unpaid') => {
+    console.log('Finalizing order with status:', paymentStatus, 'and mode:', paymentChoice);
     setLoading(true)
 
     try {
-      if (paymentChoice === 'pay_later') {
-        const sessionItems = items.map(item => ({
+        const orderItemsForOrder = items.map(item => ({
+            menuItemId: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+        }))
+
+        const orderItemsForSession = items.map(item => ({
             id: item.id,
             name: item.name,
             price: item.price,
             quantity: item.quantity,
             subtotal: item.price * item.quantity
         }))
-        const activeSession = await sessionService.getActiveSession(restaurantId, tableId)
         
-        if (activeSession) {
-          await sessionService.appendOrderToSession(activeSession.id, restaurantId, { items: sessionItems, total: totalAmount })
-        } else {
-          await sessionService.createSession(restaurantId, tableId, { items: sessionItems, total: totalAmount })
-        }
-      } else {
-        const orderItems = items.map(item => ({
-            menuItemId: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity
-        }))
-        await createOrder({
+        const orderId = await createOrder({
           restaurantId,
           tableId,
           customerName,
           customerPhone: customerPhone || undefined,
-          items: orderItems,
+          items: orderItemsForOrder,
           totalAmount: totalAmount,
           paymentMode: paymentChoice,
-          paymentStatus: paymentStatus || 'unpaid',
+          paymentStatus: paymentStatus || (paymentChoice === 'prepaid' ? 'unpaid' : 'unpaid'),
           specialInstructions: instructions,
         })
-      }
+        
+        if (paymentChoice !== 'prepaid' && activeSession) {
+            await sessionService.appendOrderToSession(activeSession.id, restaurantId, {
+                items: orderItemsForSession,
+                total: totalAmount
+            })
+        }
+        
+        console.log('Order finalized successfully with ID:', orderId);
 
       clearCart()
       showToast('Order placed successfully!')
@@ -168,17 +177,23 @@ export function CheckoutModal({ isOpen, onClose, onSuccess, restaurant }: Checko
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Payment Mode</label>
                   <div className="flex gap-4 mt-1">
-                    {['prepaid', 'both'].includes(paymentSettings.paymentMode) && (
+                    {['prepaid', 'both'].includes(paymentSettings.paymentMode || 'both') && (
                       <button 
                         onClick={() => setPaymentChoice('prepaid')}
                         className={`flex-1 py-2 rounded-md ${paymentChoice === 'prepaid' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
                       >Pay Now</button>
                     )}
-                    {['postpaid', 'both'].includes(paymentSettings.paymentMode) && (
+                    {['postpaid', 'both'].includes(paymentSettings.paymentMode || 'both') && (
+                        <>
                       <button 
-                        onClick={() => setPaymentChoice('pay_later')}
-                        className={`flex-1 py-2 rounded-md ${paymentChoice === 'pay_later' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
-                      >Pay at Counter</button>
+                        onClick={() => setPaymentChoice('counter')}
+                        className={`flex-1 py-2 rounded-md ${paymentChoice === 'counter' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+                      >Counter</button>
+                      <button 
+                        onClick={() => setPaymentChoice('table')}
+                        className={`flex-1 py-2 rounded-md ${paymentChoice === 'table' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+                      >Table</button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -189,7 +204,7 @@ export function CheckoutModal({ isOpen, onClose, onSuccess, restaurant }: Checko
                     disabled={loading}
                     className="w-full py-3 bg-green-600 text-white rounded-xl font-bold disabled:opacity-50"
                   >
-                    {loading ? 'Processing...' : `Continue - ${formatCurrency(totalAmount)}`}
+                    {loading ? 'Processing...' : (paymentChoice === 'prepaid' ? `Continue - ${formatCurrency(totalAmount)}` : 'Place Order')}
                   </button>
                   
                   <div className="flex gap-2">

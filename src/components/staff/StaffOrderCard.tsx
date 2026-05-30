@@ -1,23 +1,27 @@
 'use client'
-import { Order, updateOrderStatus } from '@/services/orderService'
+import { Order } from '@/services/orderService'
+import { updateOrderStatusWithNotification } from '@/services/orderActionService'
 import { useState, useEffect } from 'react'
 import { Clock, Check, CheckCircle2, ShoppingBag } from 'lucide-react'
 
 interface StaffOrderCardProps {
   order: Order
   restaurantId: string
+  sessionId?: string // Add sessionId
 }
 
 const statusColors: Record<string, { bg: string, text: string, label: string }> = {
-  pending: { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', label: 'Pending' },
-  accepted: { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', label: 'Accepted' },
-  preparing: { bg: 'bg-indigo-500/10 border-indigo-500/20', text: 'text-indigo-400', label: 'Preparing' },
-  ready: { bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400', label: 'Ready' },
-  served: { bg: 'bg-teal-500/10 border-teal-500/20', text: 'text-teal-400', label: 'Served' },
-  completed: { bg: 'bg-gray-500/10 border-gray-500/20', text: 'text-gray-400', label: 'Completed' },
+  PENDING: { bg: 'bg-amber-500/10 border-amber-500/20', text: 'text-amber-400', label: 'Pending' },
+  ACCEPTED: { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', label: 'Accepted' },
+  PREPARING: { bg: 'bg-purple-500/10 border-purple-500/20', text: 'text-purple-400', label: 'Preparing' },
+  READY: { bg: 'bg-orange-500/10 border-orange-500/20', text: 'text-orange-400', label: 'Ready' },
+  SERVED: { bg: 'bg-green-500/10 border-green-500/20', text: 'text-green-400', label: 'Served' },
+  BILL_GENERATED: { bg: 'bg-indigo-500/10 border-indigo-500/20', text: 'text-indigo-400', label: 'Bill Generated' },
+  PAID: { bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400', label: 'Paid' },
+  SESSION_CLOSED: { bg: 'bg-gray-500/10 border-gray-500/20', text: 'text-gray-400', label: 'Closed' },
 }
 
-export default function StaffOrderCard({ order, restaurantId }: StaffOrderCardProps) {
+export default function StaffOrderCard({ order, restaurantId, sessionId }: StaffOrderCardProps) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
@@ -33,11 +37,20 @@ export default function StaffOrderCard({ order, restaurantId }: StaffOrderCardPr
     return () => clearInterval(interval)
   }, [order.createdAt])
 
-  const handleUpdateStatus = async (newStatus: string) => {
-    await updateOrderStatus(restaurantId, order.id, newStatus)
+  const handleUpdateStatus = async (newStatus: string, note?: string) => {
+    await updateOrderStatusWithNotification(restaurantId, order.id, newStatus, sessionId, note)
   }
 
-  const statusStyle = statusColors[order.status] || { bg: 'bg-gray-500/10 border-gray-500/20', text: 'text-gray-400', label: order.status }
+  const handleAddKitchenNote = () => {
+    const note = prompt('Enter kitchen note:')
+    if (note) {
+      handleUpdateStatus('ACCEPTED', note) // Update with note, status stays ACCEPTED
+    }
+  }
+
+  const status = order.status.toUpperCase()
+
+  const statusStyle = statusColors[status] || { bg: 'bg-gray-500/10 border-gray-500/20', text: 'text-gray-400', label: order.status }
 
   return (
     <div className="bg-gray-900/60 backdrop-blur-md p-5 rounded-2xl border border-gray-800 shadow-xl flex flex-col justify-between hover:border-gray-700/80 transition-all duration-300">
@@ -87,28 +100,34 @@ export default function StaffOrderCard({ order, restaurantId }: StaffOrderCardPr
         )}
 
         {/* Actions */}
-        <div className="flex gap-2">
-          {order.status === 'ready' && (
-            <button
-              onClick={() => handleUpdateStatus('served')}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-medium py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-emerald-950/20"
-            >
-              <ShoppingBag size={15} />
-              Mark as Served
-            </button>
+        <div className="flex flex-wrap gap-2">
+          {status === 'PENDING' && (
+            <>
+              <button onClick={() => handleUpdateStatus('ACCEPTED')} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 px-3 rounded-xl text-sm font-medium">Accept</button>
+              <button onClick={() => handleUpdateStatus('cancelled')} className="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 px-3 rounded-xl text-sm font-medium">Reject</button>
+            </>
           )}
-          {order.status === 'served' && (
-            <button
-              onClick={() => handleUpdateStatus('completed')}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-indigo-950/20"
-            >
-              <CheckCircle2 size={15} />
-              Complete Order
-            </button>
+          {status === 'ACCEPTED' && (
+            <>
+              <button onClick={handleAddKitchenNote} className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-xl text-sm font-medium">Add Note</button>
+              <button onClick={() => handleUpdateStatus('PREPARING')} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded-xl text-sm font-medium">Send To Kitchen</button>
+            </>
           )}
-          {['pending', 'accepted', 'preparing'].includes(order.status) && (
+          {status === 'READY' && (
+            <button onClick={() => handleUpdateStatus('SERVED')} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-3 rounded-xl text-sm font-medium">Mark as Served</button>
+          )}
+          {status === 'SERVED' && (
+            <button onClick={() => handleUpdateStatus('BILL_GENERATED')} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-xl text-sm font-medium">Generate Bill</button>
+          )}
+          {status === 'BILL_GENERATED' && (
+            <button onClick={() => handleUpdateStatus('PAID')} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-3 rounded-xl text-sm font-medium">Mark Payment Received</button>
+          )}
+          {status === 'PAID' && (
+            <button onClick={() => handleUpdateStatus('SESSION_CLOSED')} className="w-full bg-gray-600 hover:bg-gray-500 text-white py-2 px-3 rounded-xl text-sm font-medium">Close Session</button>
+          )}
+          {['PREPARING', 'SESSION_CLOSED', 'CANCELLED'].includes(status) && (
             <div className="w-full bg-gray-950/30 border border-gray-800/50 py-2 px-3 rounded-xl text-xs text-center text-gray-500 italic">
-              Kitchen is preparing this order
+              Order in progress or closed
             </div>
           )}
         </div>

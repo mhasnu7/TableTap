@@ -14,26 +14,6 @@ export const seedDemoUsers = async () => {
       active: true,
       createdAt: new Date(),
     },
-    {
-      id: 'staff-user',
-      name: 'Staff User',
-      phone: '2222222222',
-      pin: '5678',
-      role: 'waiter',
-      restaurantId: 'rest-1',
-      active: true,
-      createdAt: new Date(),
-    },
-    {
-      id: 'kitchen-user',
-      name: 'Kitchen User',
-      phone: '3333333333',
-      pin: '9012',
-      role: 'kitchen',
-      restaurantId: 'rest-1',
-      active: true,
-      createdAt: new Date(),
-    },
   ];
 
   for (const user of users) {

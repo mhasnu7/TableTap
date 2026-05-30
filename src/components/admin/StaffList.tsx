@@ -1,7 +1,5 @@
 import { User } from '../../types/user';
-import { updateStaffStatus } from '../../services/staffService';
-// deleteStaff is still in userService.ts, that's okay for now
-import { deleteStaff } from '../../services/userService';
+import { updateStaffStatus, deleteStaff } from '../../services/staffService';
 import RoleBadge from './RoleBadge';
 import { useToast } from '../../context/ToastContext';
 
@@ -20,7 +18,7 @@ export default function StaffList({ staff, restaurantId }: { staff: User[]; rest
   const handleDeleteStaff = async (staffId: string) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
       try {
-        await deleteStaff(staffId);
+        await deleteStaff(restaurantId, staffId);
         showToast('Staff member deleted successfully!');
       } catch (error) {
         console.error('Error deleting staff:', error);
@@ -46,6 +44,7 @@ export default function StaffList({ staff, restaurantId }: { staff: User[]; rest
     <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
       <h2 className="text-xl font-bold mb-4">Staff List</h2>
       <div className="space-y-4">
+        {staff.length === 0 && <p className="text-center text-muted-foreground">No staff members yet</p>}
         {staff.map(member => (
           <div key={member.id} className="flex justify-between items-center p-4 rounded-lg bg-background border border-border">
             <div>

@@ -3,9 +3,10 @@ import { addStaff } from '../../services/staffService';
 import { checkPhoneExists } from '../../services/userService';
 import { UserRole } from '../../types/user';
 import { useToast } from '../../context/ToastContext';
+import { normalizePhoneNumber } from '../../lib/formatters';
 
 export default function AddStaffModal({ isOpen, onClose, restaurantId }: { isOpen: boolean; onClose: () => void; restaurantId: string }) {
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '', pin: '', role: 'waiter' as UserRole, active: true });
+  const [formData, setFormData] = useState({ name: '', phone: '', pin: '', role: 'waiter' as UserRole, active: true });
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
@@ -15,7 +16,10 @@ export default function AddStaffModal({ isOpen, onClose, restaurantId }: { isOpe
     e.preventDefault();
     setLoading(true);
 
-    const phoneExists = await checkPhoneExists(formData.phone, restaurantId);
+    console.log('AddStaffModal: Attempting to add staff:', { restaurantId, formData });
+
+    const normalizedPhone = normalizePhoneNumber(formData.phone);
+    const phoneExists = await checkPhoneExists(normalizedPhone, restaurantId);
     if (phoneExists) {
       showToast('Phone number already exists for another staff member in this restaurant.');
       setLoading(false);
@@ -23,19 +27,21 @@ export default function AddStaffModal({ isOpen, onClose, restaurantId }: { isOpe
     }
 
     try {
+      console.log('AddStaffModal: Calling addStaff service...');
       await addStaff(restaurantId, { 
         name: formData.name, 
-        phone: formData.phone,
-        email: formData.email,
+        phone: normalizedPhone,
         pin: formData.pin, 
         role: formData.role, 
         active: formData.active 
       });
+      console.log('AddStaffModal: addStaff service completed successfully');
       showToast('Staff member added successfully!');
       onClose();
-    } catch (error) {
-      console.error('Error adding staff:', error);
-      showToast('Failed to add staff member.');
+    } catch (error: any) {
+      console.error('AddStaffModal: Error adding staff:', error);
+      const errorMessage = error?.code || error?.message || 'Unknown error';
+      showToast(`Failed to add staff member: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -48,7 +54,6 @@ export default function AddStaffModal({ isOpen, onClose, restaurantId }: { isOpe
         <form onSubmit={handleSubmit} className="space-y-4">
           <input type="text" placeholder="Name" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, name: e.target.value})} required />
           <input type="tel" placeholder="Phone Number" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, phone: e.target.value})} required />
-          <input type="email" placeholder="Email" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, email: e.target.value})} required />
           <input type="password" placeholder="PIN" className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, pin: e.target.value})} required />
           <select className="w-full p-2 rounded bg-background border border-border" onChange={e => setFormData({...formData, role: e.target.value as UserRole})}>
             <option value="waiter">Waiter</option>

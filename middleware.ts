@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Protected route logic
-  const isProtectedRoute = pathname.startsWith('/admin') || pathname.startsWith('/staff') || pathname.startsWith('/kitchen')
+  const isProtectedRoute = pathname.startsWith('/admin') || (pathname.startsWith('/staff') && pathname !== '/staff') || pathname.startsWith('/kitchen')
 
   if (isProtectedRoute) {
     if (!role) {

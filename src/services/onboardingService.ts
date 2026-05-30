@@ -56,7 +56,7 @@ export const onboardingService = {
           addDoc(tablesCollectionRef, {
             name: `Table ${i + 1}`,
             active: true,
-            status: 'available',
+            status: 'AVAILABLE',
             createdAt: new Date(),
             qrUrl: `/r/${restaurantId}/table-${i + 1}`
           })

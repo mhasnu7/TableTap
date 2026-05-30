@@ -18,7 +18,7 @@ export default function OrderCard({ order }: { order: Order }) {
     return () => clearInterval(interval)
   }, [order.createdAt])
 
-  const updateStatus = async (status: Order["status"]) => {
+  const updateStatus = async (status: string) => {
     try {
       await updateOrderStatus(order.restaurantId, order.id, status)
     } catch (error) {
@@ -67,21 +67,28 @@ export default function OrderCard({ order }: { order: Order }) {
       )}
 
       <div className="flex flex-wrap gap-2">
-        {order.paymentStatus === 'pending_verification' && (
-          <button onClick={verifyPayment} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">Verify Payment</button>
+        {order.status === 'PENDING' && (
+          <button onClick={() => updateStatus('ACCEPTED')} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">Accept</button>
         )}
-        {order.status === 'pending' && (
-          <button onClick={() => updateStatus('preparing')} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Accept</button>
+        {order.status === 'ACCEPTED' && (
+          <button onClick={() => updateStatus('PREPARING')} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">Prepare</button>
         )}
-        {order.status === 'preparing' && (
-          <button onClick={() => updateStatus('ready')} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Ready</button>
+        {order.status === 'PREPARING' && (
+          <button onClick={() => updateStatus('READY')} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">Ready</button>
         )}
-        {order.status === 'ready' && (
-          <button onClick={() => updateStatus('served')} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Served</button>
+        {order.status === 'READY' && (
+          <button onClick={() => updateStatus('SERVED')} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">Served</button>
         )}
-        {order.status === 'served' && (
-          <button onClick={() => updateStatus('completed')} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm">Complete</button>
+        {order.status === 'SERVED' && (
+          <button onClick={() => updateStatus('BILL_GENERATED')} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">Generate Bill</button>
         )}
+        {order.status === 'BILL_GENERATED' && (
+          <button onClick={() => updateStatus('PAID')} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">Paid</button>
+        )}
+        {order.status === 'PAID' && (
+          <button onClick={() => updateStatus('SESSION_CLOSED')} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">Close Session</button>
+        )}
+        <button onClick={() => updateStatus('cancelled')} className="bg-red-600 text-white px-2 py-1 rounded text-xs">Cancel</button>
       </div>
     </div>
   )

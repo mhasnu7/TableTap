@@ -4,7 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { AuthProvider } from "@/context/AuthContext";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { RestaurantProvider } from "@/context/RestaurantContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,12 +19,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TableTap | Smart Restaurant Ordering",
   description: "Seamless digital ordering experience for restaurants.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "TableTap",
-  },
 };
 
 export default function RootLayout({
@@ -41,8 +35,9 @@ export default function RootLayout({
         <CartProvider>
           <ToastProvider>
             <AuthProvider>
-              <ServiceWorkerRegistration />
-              {children}
+              <RestaurantProvider>
+                {children}
+              </RestaurantProvider>
             </AuthProvider>
           </ToastProvider>
         </CartProvider>

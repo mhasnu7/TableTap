@@ -6,17 +6,37 @@ import {
   doc,
   serverTimestamp,
   onSnapshot,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User } from '../types/user';
 
 export const addStaff = async (restaurantId: string, staffData: Omit<User, 'id' | 'createdAt' | 'lastLogin' | 'restaurantId'>) => {
-  return await addDoc(collection(db, `restaurants/${restaurantId}/staff`), {
+  console.log('addStaff called with:', { restaurantId, staffData });
+
+  if (!restaurantId) {
+    console.error('Error adding staff: restaurantId is missing');
+    throw new Error('Restaurant ID is missing');
+  }
+
+  const path = `restaurants/${restaurantId}/staff`;
+  const payload = {
     ...staffData,
     restaurantId,
     createdAt: serverTimestamp(),
     active: true,
-  });
+  };
+
+  console.log('Attempting Firestore write:', { path, payload });
+
+  try {
+    const docRef = await addDoc(collection(db, path), payload);
+    console.log('Staff added successfully, doc ID:', docRef.id);
+    return docRef;
+  } catch (error) {
+    console.error('Firestore write error in addStaff:', error);
+    throw error;
+  }
 };
 
 export const getStaff = async (restaurantId: string) => {
@@ -41,4 +61,9 @@ export const updateStaffStatus = async (restaurantId: string, staffId: string, a
 export const updateStaffRole = async (restaurantId: string, staffId: string, role: string) => {
   const staffRef = doc(db, `restaurants/${restaurantId}/staff`, staffId);
   await updateDoc(staffRef, { role });
+};
+
+export const deleteStaff = async (restaurantId: string, staffId: string) => {
+  const staffRef = doc(db, `restaurants/${restaurantId}/staff`, staffId);
+  await deleteDoc(staffRef);
 };

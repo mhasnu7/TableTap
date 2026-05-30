@@ -17,9 +17,33 @@ export default function BillingPanel({ session, onClose, restaurantId, tableId }
     </div>
   )
 
-  const handleUpdateStatus = async (status: 'billing' | 'available' | 'cleaning') => {
+  const handleUpdateStatus = async (status: 'BILL_REQUESTED' | 'AVAILABLE' | 'CLEANING') => {
     await tableService.updateTable(restaurantId, tableId, { status })
   }
+
+  const handlePrintBill = () => {
+    // Basic printable bill view
+    const printWindow = window.open('', '', 'height=600,width=400');
+    if (printWindow) {
+        printWindow.document.write(`
+            <html>
+                <head><title>Bill - Table ${tableId}</title></head>
+                <body style="font-family: sans-serif; padding: 20px;">
+                    <h1>Restaurant Name</h1>
+                    <p>Table: ${tableId}</p>
+                    <hr/>
+                    <ul>
+                        ${session?.orders.map(o => o.items.map(i => `<li>${i.name} x${i.quantity} - $${(i.price * i.quantity).toFixed(2)}</li>`).join('')).join('')}
+                    </ul>
+                    <hr/>
+                    <p>Total: $${session?.total.toFixed(2)}</p>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+  };
 
   return (
     <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-800 shadow-xl text-white">
@@ -62,21 +86,28 @@ export default function BillingPanel({ session, onClose, restaurantId, tableId }
 
       <div className="flex flex-col gap-2">
         <button 
-          onClick={() => handleUpdateStatus('billing')}
+          onClick={handlePrintBill}
+          className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-950/20"
+        >
+          <CreditCard size={16} />
+          Print Bill
+        </button>
+        <button 
+          onClick={() => handleUpdateStatus('BILL_REQUESTED')}
           className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-950/20"
         >
           <CreditCard size={16} />
           Bill Requested
         </button>
         <button 
-          onClick={() => handleUpdateStatus('cleaning')}
+          onClick={() => handleUpdateStatus('CLEANING')}
           className="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-950/20"
         >
           <X size={16} />
           Request Cleanup
         </button>
         <button 
-          onClick={() => handleUpdateStatus('available')}
+          onClick={() => handleUpdateStatus('AVAILABLE')}
           className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20"
         >
           <CheckCircle size={16} />

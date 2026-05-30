@@ -23,9 +23,6 @@ export default function LoginPage() {
         const user = JSON.parse(userStr)
         const role = user.role
         if (role === 'admin') router.push('/admin')
-        else if (role === 'waiter') router.push('/staff')
-        else if (role === 'kitchen') router.push('/kitchen')
-        else if (role === 'cashier') router.push('/staff')
         else if (role === 'manager') router.push('/admin')
         else router.push('/')
       }

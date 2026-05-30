@@ -5,8 +5,12 @@ import { LayoutDashboard, Users, UtensilsCrossed, LogOut, Menu } from 'lucide-re
 import { useState } from 'react'
 import { clsx } from 'clsx'
 
+import { RestaurantBranding } from '@/components/RestaurantBranding'
+import { useRestaurant } from '@/context/RestaurantContext'
+
 export default function DashboardLayout({ children, navItems, title }: { children: React.ReactNode, navItems: React.ReactNode, title: string }) {
   const { logout, user, loading } = useAuth()
+  const { restaurant } = useRestaurant()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
@@ -18,11 +22,8 @@ export default function DashboardLayout({ children, navItems, title }: { childre
         "-translate-x-full lg:translate-x-0": !isSidebarOpen,
         "translate-x-0": isSidebarOpen
       })}>
-        <div className="p-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">TableTap</h1>
-          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-500">
-            <Menu />
-          </button>
+        <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+          <RestaurantBranding />
         </div>
         <nav className="mt-6 flex-1 px-4 space-y-2">
           {navItems}
@@ -43,7 +44,9 @@ export default function DashboardLayout({ children, navItems, title }: { childre
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-500 dark:text-gray-400 mr-4">
             <Menu />
           </button>
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white capitalize">{title}</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            {restaurant ? `${restaurant.name} • ${title}` : title}
+          </h2>
         </header>
         <div className="p-8">
           {children}

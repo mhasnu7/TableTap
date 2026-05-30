@@ -1,8 +1,15 @@
 import { useToast } from '@/context/ToastContext';
 import { Table } from '@/types/table';
 import { tableService } from '@/services/tableService';
-import { Copy, Download, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { Copy, Download, ToggleLeft, ToggleRight, Trash2, User as UserIcon } from 'lucide-react';
 import { getBaseUrl } from '@/lib/getBaseUrl';
+import { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { Session } from '@/types/session';
+import { SessionDisplay } from '../SessionTimer';
+import { getStaff } from '@/services/userService';
+import { User } from '@/types/user';
 
 interface TableCardProps {
   table: Table;
@@ -13,6 +20,31 @@ export function TableCard({ table, restaurantId }: TableCardProps) {
   const { showToast } = useToast();
   const baseUrl = getBaseUrl();
   const qrCodeApi = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${baseUrl}${table.qrUrl}`)}`;
+  const [activeSession, setActiveSession] = useState<Session | null>(null);
+  const [waiters, setWaiters] = useState<User[]>([]);
+
+  useEffect(() => {
+    if (!restaurantId || !table.id) return
+      
+    const q = query(
+        collection(db, `restaurants/${restaurantId}/sessions`),
+        where('tableId', '==', table.id),
+        where('isActive', '==', true)
+    )
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+            const session = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Session
+            setActiveSession(session)
+        } else {
+            setActiveSession(null)
+        }
+    })
+    
+    getStaff(restaurantId).then(staff => setWaiters(staff.filter(u => u.role === 'waiter')));
+    
+    return () => unsubscribe()
+  }, [restaurantId, table.id])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(`${baseUrl}${table.qrUrl}`);
@@ -30,6 +62,11 @@ export function TableCard({ table, restaurantId }: TableCardProps) {
     a.click();
     document.body.removeChild(a);
   };
+
+  const handleAssignWaiter = async (waiterId: string) => {
+    await tableService.assignWaiterToTable(restaurantId, table.id, waiterId === 'none' ? null : waiterId);
+    showToast('Waiter assigned successfully');
+  }
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -52,8 +89,26 @@ export function TableCard({ table, restaurantId }: TableCardProps) {
         </div>
       </div>
       
+      <div className="mb-4">
+        <label className="block text-xs font-medium text-slate-500 mb-1">Assign Waiter</label>
+        <select 
+            value={table.assignedWaiterId || 'none'}
+            onChange={e => handleAssignWaiter(e.target.value)}
+            className="w-full border border-slate-200 p-2 rounded-lg text-sm"
+        >
+            <option value="none">Unassigned</option>
+            {waiters.map(waiter => (
+                <option key={waiter.id} value={waiter.id}>{waiter.name}</option>
+            ))}
+        </select>
+      </div>
+
       <div className="text-sm text-slate-500 mt-4 text-center">
-        Status: <span className={`font-semibold ${table.active ? 'text-green-500' : 'text-slate-400'}`}>{table.active ? 'Active' : 'Inactive'}</span>
+        {activeSession ? (
+            <SessionDisplay session={activeSession} />
+        ) : (
+            <span className={`font-semibold ${table.active ? 'text-green-500' : 'text-slate-400'}`}>{table.active ? 'Active' : 'Inactive'}</span>
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  orderBy,
   onSnapshot,
   query,
   serverTimestamp,
@@ -26,9 +27,9 @@ export interface Order {
   customerPhone?: string;
   tableId: string;
   restaurantId: string;
-  paymentMode: 'prepaid' | 'postpaid';
+  paymentMode: 'prepaid' | 'counter' | 'table';
   paymentStatus?: 'pending_verification' | 'paid' | 'unpaid';
-  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled';
+  status: 'PENDING' | 'ACCEPTED' | 'PREPARING' | 'READY' | 'SERVED' | 'BILL_GENERATED' | 'PAID' | 'SESSION_CLOSED' | 'cancelled' | 'completed';
   createdAt: Timestamp;
   specialInstructions?: string;
   totalAmount: number;
@@ -59,12 +60,17 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
 };
 
 export const subscribeToOrders = (restaurantId: string, callback: (orders: any[]) => void) => {
-  const q = query(collection(db, 'restaurants', restaurantId, 'orders'));
+  const q = query(collection(db, 'restaurants', restaurantId, 'orders'), orderBy('createdAt', 'desc'));
+  
+  console.log("DEBUG: listener attached to", `restaurants/${restaurantId}/orders`);
+  
   return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
     const orders = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
+    
+    console.log("DEBUG: orders received:", orders.length);
     callback(orders);
   });
 };

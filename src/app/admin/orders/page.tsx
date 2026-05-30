@@ -17,8 +17,7 @@ export default function OrdersPage() {
 
     console.log("DEBUG: Setting up orders listener for", user.restaurantId)
     const unsubscribe = subscribeToOrders(user.restaurantId, (fetchedOrders) => {
-      const sortedOrders = fetchedOrders.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
-      setOrders(sortedOrders)
+      setOrders(fetchedOrders)
       setLoading(false)
     })
 

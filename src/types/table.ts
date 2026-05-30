@@ -1,4 +1,4 @@
-export type TableStatus = 'available' | 'occupied' | 'billing' | 'cleaning'
+export type TableStatus = 'AVAILABLE' | 'OCCUPIED' | 'BILL_REQUESTED' | 'PAYMENT_PENDING' | 'CLEANING'
 
 export interface Table {
   id: string;
@@ -9,4 +9,5 @@ export interface Table {
   status: TableStatus;
   qrUrl: string;
   createdAt: Date;
+  assignedWaiterId?: string;
 }

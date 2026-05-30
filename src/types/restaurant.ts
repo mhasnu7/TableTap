@@ -17,9 +17,10 @@ export interface Restaurant {
   createdAt: Date;
   paymentSettings: {
     allowPrepaid: boolean;
-    allowPayAtCounter: boolean;
+    allowPostpaid: boolean;
+    defaultPaymentMode: 'prepaid' | 'postpaid';
     upiId?: string;
     paymentQr?: string;
-    paymentMode: 'prepaid' | 'postpaid' | 'both';
+    paymentMode?: 'prepaid' | 'postpaid' | 'both'; // Deprecated
   };
 }

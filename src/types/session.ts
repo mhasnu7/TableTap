@@ -9,7 +9,7 @@ export interface OrderItem {
 }
 
 export type PaymentStatus = 'unpaid' | 'paid' | 'partially paid'
-export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'cancelled' | 'completed'
+export type OrderStatus = 'PENDING' | 'ACCEPTED' | 'PREPARING' | 'READY' | 'SERVED' | 'BILL_GENERATED' | 'PAID' | 'SESSION_CLOSED' | 'cancelled' | 'completed'
 
 export interface SessionOrder {
   orderId: string
@@ -20,16 +20,27 @@ export interface SessionOrder {
   updatedAt: Date
 }
 
+export type SessionStatus = 'ACTIVE' | 'BILL_REQUESTED' | 'BILL_GENERATED' | 'PAYMENT_RECEIVED' | 'CLOSED'
+export type PaymentMode = 'PREPAID' | 'POSTPAID'
+
 export interface Session {
   id: string
   restaurantId: string
   tableId: string
+  status: SessionStatus
+  paymentMode: PaymentMode
   orders: SessionOrder[]
   subtotal: number
   taxes: number
   total: number
   paymentStatus: PaymentStatus
+  customerName?: string
+  customerPhone?: string
   isActive: boolean
+  lastActivity: Date
+  startTime: Date
+  endTime?: Date
   createdAt: Date
   updatedAt: Date
+  sessionDurationMinutes: number
 }

@@ -8,7 +8,7 @@ export default function OrderCard({
 }: { 
   order: Order, 
   restaurantId: string,
-  onUpdateStatus?: (orderId: string, status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled') => Promise<void>
+  onUpdateStatus?: (orderId: string, status: string) => Promise<void>
 }) {
   const [elapsed, setElapsed] = useState(0)
 
@@ -22,7 +22,7 @@ export default function OrderCard({
     return () => clearInterval(interval)
   }, [order.createdAt])
 
-  const handleUpdateStatus = async (newStatus: 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled') => {
+  const handleUpdateStatus = async (newStatus: string) => {
     if (onUpdateStatus) {
       await onUpdateStatus(order.id, newStatus)
     } else {
@@ -51,14 +51,11 @@ export default function OrderCard({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {order.status === 'pending' && (
-          <button onClick={() => handleUpdateStatus('accepted')} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-md text-sm">Accept</button>
+        {order.status === 'ACCEPTED' && (
+          <button onClick={() => handleUpdateStatus('PREPARING')} className="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1 rounded-md text-sm">Start Preparing</button>
         )}
-        {order.status === 'accepted' && (
-          <button onClick={() => handleUpdateStatus('preparing')} className="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1 rounded-md text-sm">Prepare</button>
-        )}
-        {order.status === 'preparing' && (
-          <button onClick={() => handleUpdateStatus('ready')} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-md text-sm">Ready</button>
+        {order.status === 'PREPARING' && (
+          <button onClick={() => handleUpdateStatus('READY')} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-md text-sm">Mark Ready</button>
         )}
       </div>
     </div>

@@ -27,5 +27,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </Link>
   )
 
-  return <DashboardLayout navItems={navItems} title="Staff Dashboard">{children}</DashboardLayout>
+  return <DashboardLayout navItems={navItems} title="Waiter Panel">{children}</DashboardLayout>
 }

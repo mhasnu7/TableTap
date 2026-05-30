@@ -55,5 +55,10 @@ export const tableService = {
   async setTableActiveStatus(restaurantId: string, tableId: string, active: boolean) {
     const tableRef = doc(db, `restaurants/${restaurantId}/tables/${tableId}`)
     await updateDoc(tableRef, { active })
+  },
+
+  async assignWaiterToTable(restaurantId: string, tableId: string, waiterId: string | null) {
+    const tableRef = doc(db, `restaurants/${restaurantId}/tables/${tableId}`)
+    await updateDoc(tableRef, { assignedWaiterId: waiterId })
   }
 }
