@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null, 
   loading: true, 
   login: async () => false,
-  staffLogin: async () => false,
+  staffLogin: async () => null,
   signup: async () => false,
   logout: () => {},
   setUser: () => {}

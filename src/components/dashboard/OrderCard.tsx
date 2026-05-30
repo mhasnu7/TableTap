@@ -18,7 +18,7 @@ export default function OrderCard({ order }: { order: Order }) {
     return () => clearInterval(interval)
   }, [order.createdAt])
 
-  const updateStatus = async (status: string) => {
+  const updateStatus = async (status: Order['status']) => {
     try {
       await updateOrderStatus(order.restaurantId, order.id, status)
     } catch (error) {

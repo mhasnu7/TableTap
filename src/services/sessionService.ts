@@ -61,6 +61,7 @@ export const sessionService = {
       restaurantId,
       tableId,
       status: 'ACTIVE',
+      paymentMode: 'POSTPAID',
       orders: [{
         orderId: Date.now().toString(),
         items: order.items,
